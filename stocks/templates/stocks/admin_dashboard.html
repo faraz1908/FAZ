@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Executive Command Center | FAZ Metrics</title>
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        /* ════════ CUSTOM ARCHITECTURAL DESIGN TOKENS ════════ */
+        :root {
+            --sidebar-width: 280px;
+            --transition-speed: 0.25s;
+            --mobile-nav-height: 65px;
+        }
+
+        /* Ultimate Dark Theme Mode */
+        [data-bs-theme="dark"] {
+            --bg-main: #0b0f19;
+            --bg-surface: #111827;
+            --bg-card: #1f2937;
+            --border-color: #2d3748;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+            --sidebar-active: rgba(59, 130, 246, 0.16);
+            --input-focus-bg: #111827;
+        }
+
+        /* Ultimate Light Theme Mode */
+        [data-bs-theme="light"] {
+            --bg-main: #f4f6f9;
+            --bg-surface: #ffffff;
+            --bg-card: #ffffff;
+            --border-color: #e5e7eb;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --sidebar-active: rgba(59, 130, 246, 0.08);
+            --input-focus-bg: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 💻 DESKTOP LAPTOP: Fixed Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            transition: all var(--transition-speed);
+        }
+
+        /* 💻 DESKTOP LAPTOP: Main Content Layout */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            padding: 2.5rem;
+            transition: all var(--transition-speed);
+            padding-bottom: 3rem;
+        }
+
+        .nav-link {
+            color: var(--text-main) !important;
+            opacity: 0.7;
+            border-radius: 10px;
+            padding: 0.8rem 1.1rem;
+            margin-bottom: 0.35rem;
+            font-weight: 500;
+            transition: all var(--transition-speed);
+        }
+
+        .nav-link:hover, .nav-link.active {
+            opacity: 1;
+            background-color: var(--sidebar-active);
+            color: #3b82f6 !important;
+            transform: translateX(4px);
+        }
+
+        /* Premium Glassmorphism Cards */
+        .glass-card {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+            transition: background-color var(--transition-speed), border-color var(--transition-speed);
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        /* Form Inputs */
+        .price-input-box {
+            max-width: 100px;
+            background-color: var(--bg-main) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-main) !important;
+            font-weight: 600;
+            border-radius: 8px !important;
+        }
+        
+        .price-input-box:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        }
+
+        .modal-input {
+            width: 100% !important;
+            background-color: var(--bg-main) !important;
+            border: 1px solid var(--border-color) !important;
+            color: var(--text-main) !important;
+            padding: 0.75rem 1rem !important;
+            border-radius: 10px !important;
+        }
+
+        .table-responsive {
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-surface);
+        }
+
+        .table {
+            color: var(--text-main) !important;
+            margin-bottom: 0;
+        }
+        
+        .table th {
+            color: var(--text-muted) !important;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            background-color: rgba(0,0,0,0.05) !important;
+            padding: 1rem;
+        }
+
+        .table td {
+            padding: 1rem;
+        }
+
+        .theme-toggle-btn {
+            cursor: pointer;
+            font-size: 1.3rem;
+        }
+
+        /* 📱 MOBILE FIXES: Media Queries for Smartphones & Tablets */
+        @media (max-width: 991.98px) {
+            /* Hide Desktop Sidebar */
+            .sidebar {
+                display: none !important;
+            }
+
+            /* Main Content takes full width on mobile without breaks */
+            .main-content {
+                margin-left: 0 !important;
+                padding: 1.25rem !important;
+                padding-bottom: calc(var(--mobile-nav-height) + 2rem) !important;
+            }
+
+            /* Fixed Bottom Mobile Navigation Dock */
+            .mobile-nav-dock {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: var(--mobile-nav-height);
+                background-color: var(--bg-surface);
+                border-top: 1px solid var(--border-color);
+                display: flex !important;
+                justify-content: space-around;
+                align-items: center;
+                z-index: 1050;
+                padding: 5px 10px;
+                box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.15);
+            }
+
+            .mobile-nav-item {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                color: var(--text-muted);
+                text-decoration: none;
+                font-size: 0.65rem;
+                font-weight: 500;
+                transition: color 0.2s;
+            }
+
+            .mobile-nav-item i {
+                font-size: 1.3rem;
+                margin-bottom: 2px;
+            }
+
+            .mobile-nav-item.active, .mobile-nav-item:hover {
+                color: #3b82f6 !important;
+            }
+
+            /* Responsive Text Scaling for Metrics */
+            .glass-card h3 {
+                font-size: 1.45rem !important;
+            }
+
+            /* Form Inline Fixes for Mobile Layout */
+            .d-inline-flex {
+                display: flex !important;
+                width: 100%;
+                gap: 5px;
+            }
+            .price-input-box {
+                flex-grow: 1;
+                max-width: 100%;
+            }
+
+            .btn-group {
+                width: 100%;
+            }
+            .btn-group .btn {
+                flex: 1;
+            }
+
+            /* Header alignments on small devices */
+            .header-node-container {
+                text-align: center;
+                flex-direction: column !important;
+                align-items: center !important;
+                gap: 1rem !important;
+            }
+        }
+
+        /* Web View Helper Utilities */
+        @media (min-width: 992px) {
+            .mobile-nav-dock {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Django Message Notifications -->
+    {% if messages %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            {% for message in messages %}
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: "{% if message.tags == 'error' %}error{% else %}success{% endif %}",
+                    title: "{{ message }}",
+                    showConfirmButton: false,
+                    timer: 4000,
+                    background: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#1f2937' : '#ffffff',
+                    color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#f9fafb' : '#111827'
+                });
+            {% endfor %}
+        });
+    </script>
+    {% endif %}
+
+    <!-- ════════ 💻 DESKTOP LAPTOP SIDEBAR NAVIGATION ════════ -->
+    <div class="sidebar d-flex flex-column justify-content-between p-3">
+        <div>
+            <!-- Brand Logotype -->
+            <div class="d-flex align-items-center gap-3 mb-4 px-2 mt-2">
+                <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center shadow" style="width: 38px; height: 38px;">
+                    <i class="bi bi-cpu-fill fs-5"></i>
+                </div>
+                <span class="fs-5 fw-bold tracking-tight">FAZ Metrics Panel</span>
+            </div>
+
+            <!-- Root Profile Module -->
+            <div class="glass-card p-3 d-flex align-items-center gap-3 mb-4">
+                <div class="bg-gradient bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 44px; height: 44px; font-size: 1.2rem;">
+                    {{ request.user.username|slice:":1"|upper }}
+                </div>
+                <div style="line-height: 1.3; overflow: hidden;">
+                    <span class="fw-bold d-block small text-truncate" style="max-width: 140px;">{{ request.user.username }}</span>
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-0.5 mt-1" style="font-size: 0.65rem; font-weight: 600;">System Root</span>
+                </div>
+            </div>
+
+            <!-- Navigation Core Links -->
+            <ul class="nav flex-column">
+                <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-grid-1x2-fill me-3"></i>Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="#stock-control"><i class="bi bi-sliders2 me-3"></i>Asset Valuation</a></li>
+                <li class="nav-item"><a class="nav-link" href="#recharge-analytics-section"><i class="bi bi-wallet2 me-3"></i>Recharge Flow</a></li>
+                <li class="nav-item"><a class="nav-link" href="#system-audit-matrix"><i class="bi bi-terminal-box me-3"></i>System Matrices</a></li>
+            </ul>
+        </div>
+
+        <div>
+            <div class="d-flex align-items-center justify-content-between glass-card p-2.5 mb-2.5">
+                <span class="small text-muted fw-semibold ps-1">Interface Node</span>
+                <div id="themeToggle" class="theme-toggle-btn">
+                    <i class="bi bi-moon-stars-fill" id="themeIcon"></i>
+                </div>
+            </div>
+            <a href="{% url 'logout' %}" class="btn btn-outline-danger w-100 d-flex align-items-center justify-content-center gap-2 py-2 fw-semibold rounded-3">
+                <i class="bi bi-power fs-5"></i> Kill Session Node
+            </a>
+        </div>
+    </div>
+
+    <!-- ════════ 📱 MOBILE FIX: BOTTOM NAVIGATION DOCK DYNAMIC ════════ -->
+    <div class="mobile-nav-dock">
+        <a href="#" class="mobile-nav-item active">
+            <i class="bi bi-grid-1x2-fill"></i>
+            <span>Core</span>
+        </a>
+        <a href="#stock-control" class="mobile-nav-item">
+            <i class="bi bi-sliders2"></i>
+            <span>Assets</span>
+        </a>
+        <a href="#recharge-analytics-section" class="mobile-nav-item">
+            <i class="bi bi-wallet2"></i>
+            <span>Flow</span>
+        </a>
+        <a href="#themeToggle" id="mobileThemeToggle" class="mobile-nav-item" style="color: #eab308;">
+            <i class="bi bi-moon-stars-fill" id="mobileThemeIcon"></i>
+            <span>Theme</span>
+        </a>
+        <a href="{% url 'logout' %}" class="mobile-nav-item text-danger">
+            <i class="bi bi-power"></i>
+            <span>Exit</span>
+        </a>
+    </div>
+
+    <!-- ════════ MAIN METRICS CONSOLE CONTAINER ════════ -->
+    <div class="main-content">
+        
+        <!-- Header Node Header System -->
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 header-node-container">
+            <div>
+                <h2 class="fw-extrabold m-0 tracking-tight">FAZ Metrics Center</h2>
+                <p class="text-muted small m-0 mt-1">Global valuation overrides & liquid currency streams</p>
+            </div>
+            
+            <div class="d-flex align-items-center gap-2 flex-wrap justify-content-center">
+                <!-- ➕ Trigger New Asset Modal -->
+                <button type="button" class="btn btn-primary d-flex align-items-center gap-2 px-3 py-2 fw-semibold rounded-3 shadow-sm border-0" data-bs-toggle="modal" data-bs-target="#addStockModal" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+                    <i class="bi bi-plus-circle-fill fs-6"></i> Add Asset
+                </button>
+                
+                <div class="glass-card py-1.5 px-3 text-center shadow-sm border-primary-subtle m-0">
+                    <span class="text-muted text-uppercase d-block fw-bold" style="font-size: 0.55rem; letter-spacing: 0.05em;">Cron Clock</span>
+                    <span class="fw-bold text-primary font-monospace small" id="liveClock">--:--:--</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Metrics Ribbon Grid Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-xl-3">
+                <div class="glass-card p-3">
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size:0.7rem;">Platform Funds</span>
+                    <h3 class="fw-bold mt-1 mb-0 text-truncate">打{{ total_platform_funds|floatformat:2 }}</h3>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="glass-card p-3">
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size:0.7rem;">Commission Yield</span>
+                    <h3 class="fw-bold mt-1 mb-0 text-success text-truncate">打{{ total_commission|floatformat:2 }}</h3>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="glass-card p-3">
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size:0.7rem;">Active Clusters</span>
+                    <h3 class="fw-bold mt-1 mb-0 text-warning">{{ active_logins_count }}</h3>
+                </div>
+            </div>
+            <div class="col-6 col-xl-3">
+                <div class="glass-card p-3">
+                    <span class="text-muted small text-uppercase fw-bold" style="font-size:0.7rem;">Hot Asset</span>
+                    <h3 class="fw-bold mt-1 mb-0 text-info text-truncate">{{ hot_stock.ticker }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- CHARTS GRAPH MATRICES -->
+        <div class="row g-3 mb-4" id="recharge-analytics-section">
+            <div class="col-lg-7">
+                <div class="glass-card">
+                    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2"><i class="bi bi-activity text-primary"></i> Profit / Loss Matrix</h6>
+                    <div style="height: 240px; position: relative; width: 100%;">
+                        <canvas id="adminPnLChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="glass-card">
+                    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2"><i class="bi bi-wallet2 text-success"></i> Capital Flow Analysis</h6>
+                    <div style="height: 240px; position: relative; width: 100%;">
+                        <canvas id="rechargeFlowChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🛠️ ASSET CONTROL TABLE MODULE -->
+        <div class="glass-card mb-4" id="stock-control">
+            <h6 class="fw-bold mb-3 d-flex align-items-center gap-2"><i class="bi bi-sliders text-primary"></i> Asset Valuation Overrides</h6>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>SYMBOL</th>
+                            <th>NAME</th>
+                            <th class="text-center">LIVE VALUE</th>
+                            <th class="text-center">MANUAL OVERRIDE</th>
+                            <th class="text-center">DELTA TRIGGERS</th>
+                            <th class="text-end">PURGE</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in all_stocks %}
+                        <tr class="border-bottom border-light-subtle">
+                            <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-2 py-1">{{ stock.ticker }}</span></td>
+                            <td class="fw-semibold text-truncate" style="max-width: 120px;">{{ stock.name }}</td>
+                            <td class="text-center fw-bold text-warning">打{{ stock.current_price }}</td>
+                            <td class="text-center">
+                                <form method="POST" action="{% url 'admin_dashboard' %}" class="d-inline-flex gap-1" onsubmit="confirmPriceManipulation(event, '{{ stock.ticker }}')">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="stock_id" value="{{ stock.id }}">
+                                    <input type="hidden" name="update_price" value="1">
+                                    <input type="number" step="0.01" name="new_price" class="form-control form-control-sm price-input-box text-center shadow-sm" value="{{ stock.current_price }}" required>
+                                    <button type="submit" class="btn btn-sm btn-primary px-2">Set</button>
+                                </form>
+                            </td>
+                            <td class="text-center">
+                                <form method="POST" action="{% url 'admin_dashboard' %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="stock_id" value="{{ stock.id }}">
+                                    <input type="hidden" name="adjust_price" value="1">
+                                    <div class="btn-group shadow-sm">
+                                        <button type="submit" name="direction" value="up" class="btn btn-sm btn-outline-success py-1">+5%</button>
+                                        <button type="submit" name="direction" value="down" class="btn btn-sm btn-outline-danger py-1">-5%</button>
+                                    </div>
+                                </form>
+                            </td>
+                            <td class="text-end">
+                                <form method="POST" action="{% url 'admin_dashboard' %}" class="d-inline" onsubmit="return confirm('Purge asset completely?');">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="stock_id" value="{{ stock.id }}">
+                                    <button type="submit" name="delete_stock" value="1" class="btn btn-sm btn-outline-danger px-2 py-1 rounded-3">
+                                        <i class="bi bi-trash3-fill"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-muted py-4 text-center">No structural assets detected in registry.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RECHARGE AND LOG AUDITS GRID ROW -->
+        <div class="row g-3" id="system-audit-matrix">
+            <div class="col-lg-6">
+                <div class="glass-card">
+                    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2"><i class="bi bi-credit-card-check text-success"></i> Liquidity Recharges</h6>
+                    <div class="table-responsive" style="max-height: 240px; overflow-y:auto;">
+                        <table class="table table-sm align-middle table-hover small">
+                            <thead>
+                                <tr>
+                                    <th>TRADER</th>
+                                    <th class="text-center">FLOW</th>
+                                    <th class="text-end">INDEX NODE</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for tx in fund_transactions %}
+                                <tr>
+                                    <td class="fw-bold text-primary">{{ tx.user.username }}</td>
+                                    <td class="text-center text-success fw-bold">打{{ tx.total_amount|floatformat:2 }}</td>
+                                    <td class="text-end text-muted">#{{ tx.id }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="3" class="text-muted py-3 text-center">No liquidity injections detected.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="glass-card">
+                    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2"><i class="bi bi-fingerprint text-warning"></i> Access Logs Tracing</h6>
+                    <div class="table-responsive" style="max-height: 240px; overflow-y:auto;">
+                        <table class="table table-sm align-middle table-hover small">
+                            <thead>
+                                <tr>
+                                    <th>OPERATOR</th>
+                                    <th class="text-end">TRIGGER ACTION</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in session_logs|slice:":10" %}
+                                <tr>
+                                    <td class="fw-bold text-info">
+                                        {% if log.user.username %}{{ log.user.username }}{% else %}Node User #{{ log.user_id }}{% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge bg-secondary-subtle text-muted border border-secondary-subtle px-2 py-0.5">
+                                            {% if log.action %}{{ log.action }}{% else %}TX LOG TRACE{% endif %}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="2" class="text-muted py-3 text-center">No log footprints compiled.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ════════ ➕ ADD NEW ASSET MODAL ════════ -->
+    <div class="modal fade" id="addStockModal" tabindex="-1" aria-labelledby="addStockModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm-down-fullscreen">
+            <div class="modal-content border-0 shadow-lg" style="background-color: var(--bg-surface); color: var(--text-main); border-radius: 16px;">
+                <div class="modal-header border-bottom border-light-subtle p-3">
+                    <h6 class="modal-title fw-bold d-flex align-items-center gap-2" id="addStockModalLabel">
+                        <i class="bi bi-plus-circle-fill text-primary"></i> Register New Node Asset
+                    </h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form method="POST" action="{% url 'admin_dashboard' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="add_stock" value="1">
+                    
+                    <div class="modal-body p-3">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted mb-1">ASSET TICKER / SYMBOL</label>
+                            <input type="text" name="ticker" class="form-control modal-input" placeholder="e.g. BTC, TSLA" required autocomplete="off">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold text-muted mb-1">COMPANY NAME</label>
+                            <input type="text" name="name" class="form-control modal-input" placeholder="e.g. Tesla Motors Inc." required autocomplete="off">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label small fw-bold text-muted mb-1">INITIAL VALUATION (打)</label>
+                            <input type="number" step="0.01" name="current_price" class="form-control modal-input" placeholder="0.00" required autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top border-light-subtle p-2 bg-opacity-10 bg-black">
+                        <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-2" data-bs-dismiss="modal">Abort</button>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 py-2 border-0" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">Deploy Asset</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS (Required for Modals) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ════════ CONTROL SYSTEM ENGINES & CHART RE-RENDERING HOOKS ════════ -->
+    <script>
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('liveClock').innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
+
+        const themeToggle = document.getElementById('themeToggle');
+        const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+        const htmlElement = document.documentElement;
+        const themeIcon = document.getElementById('themeIcon');
+        const mobileThemeIcon = document.getElementById('mobileThemeIcon');
+
+        let pnlChartInstance = null;
+        let flowChartInstance = null;
+
+        const savedTheme = localStorage.getItem('adminTheme') || 'dark';
+        htmlElement.setAttribute('data-bs-theme', savedTheme);
+        updateToggleIcons(savedTheme);
+
+        function toggleThemeLogic() {
+            const currentTheme = htmlElement.getAttribute('data-bs-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            htmlElement.setAttribute('data-bs-theme', newTheme);
+            localStorage.setItem('adminTheme', newTheme);
+            updateToggleIcons(newTheme);
+            renderCharts(newTheme);
+        }
+
+        themeToggle.addEventListener('click', toggleThemeLogic);
+        if(mobileThemeToggle) {
+            mobileThemeToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleThemeLogic();
+            });
+        }
+
+        function updateToggleIcons(theme) {
+            if(theme === 'dark') {
+                if(themeIcon) themeIcon.className = "bi bi-moon-stars-fill";
+                if(mobileThemeIcon) mobileThemeIcon.className = "bi bi-moon-stars-fill";
+            } else {
+                if(themeIcon) themeIcon.className = "bi bi-sun-fill";
+                if(mobileThemeIcon) mobileThemeIcon.className = "bi bi-sun-fill";
+            }
+        }
+
+        function confirmPriceManipulation(event, ticker) {
+            event.preventDefault();
+            const form = event.target;
+            const targetVal = form.querySelector('input[name="new_price"]').value;
+
+            Swal.fire({
+                title: `Override ${ticker}?`,
+                text: `Alter live metric to 打${targetVal}.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3b82f6',
+                cancelButtonColor: '#4b5563',
+                confirmButtonText: 'Deploy',
+                background: htmlElement.getAttribute('data-bs-theme') === 'dark' ? '#1f2937' : '#ffffff',
+                color: htmlElement.getAttribute('data-bs-theme') === 'dark' ? '#f9fafb' : '#111827'
+            }).then((res) => {
+                if(res.isConfirmed) form.submit();
+            });
+        }
+
+        function renderCharts(theme) {
+            const gridColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.06)';
+            const tickColor = theme === 'dark' ? '#9ca3af' : '#4b5563';
+
+            const pnlCtx = document.getElementById('adminPnLChart').getContext('2d');
+            const flowCtx = document.getElementById('rechargeFlowChart').getContext('2d');
+
+            if (pnlChartInstance) pnlChartInstance.destroy();
+            if (flowChartInstance) flowChartInstance.destroy();
+
+            const labels = [];
+            const pnlData = [];
+            {% for stock in all_stocks %}
+                labels.push("{{ stock.ticker }}");
+                pnlData.push({{ stock.admin_stock_pnl|default:0 }});
+            {% endfor %}
+
+            const backgroundColors = pnlData.map(val => val >= 0 ? 'rgba(34, 197, 94, 0.25)' : 'rgba(239, 68, 68, 0.25)');
+            const borderColors = pnlData.map(val => val >= 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)');
+
+            if(labels.length > 0) {
+                pnlChartInstance = new Chart(pnlCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Yield Matrix',
+                            data: pnlData,
+                            backgroundColor: backgroundColors,
+                            borderColor: borderColors,
+                            borderWidth: 2,
+                            borderRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { grid: { color: gridColor }, ticks: { color: tickColor } },
+                            x: { grid: { display: false }, ticks: { color: tickColor } }
+                        }
+                    }
+                });
+            }
+
+            const rechargeAmounts = [];
+            const rechargeLabels = [];
+            {% for tx in fund_transactions|slice:":7" %}
+                rechargeAmounts.push({{ tx.total_amount }});
+                rechargeLabels.push("{{ tx.user.username }}");
+            {% endfor %}
+
+            rechargeLabels.reverse();
+            rechargeAmounts.reverse();
+
+            flowChartInstance = new Chart(flowCtx, {
+                type: 'line',
+                data: {
+                    labels: rechargeLabels.length ? rechargeLabels : ["No Data"],
+                    datasets: [{
+                        label: 'Liquid Recharges',
+                        data: rechargeAmounts.length ? rechargeAmounts : [0],
+                        borderColor: '#22c55e',
+                        backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#22c55e'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: gridColor }, ticks: { color: tickColor } },
+                        x: { grid: { display: false }, ticks: { color: tickColor } }
+                    }
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderCharts(htmlElement.getAttribute('data-bs-theme'));
+        });
+    </script>
+</body>
+</html>

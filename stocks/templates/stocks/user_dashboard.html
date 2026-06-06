@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Dashboard | FAZ Metrics</title>
+    <!-- Bootstrap CDN for UI -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons for Sidebar -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --bg-body: #f4f6f9;
+            --bg-card: #ffffff;
+            --text-main: #212529;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+        }
+
+        [data-bs-theme="dark"] {
+            --bg-body: #0f172a;
+            --bg-card: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-body); 
+            color: var(--text-main);
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .sidebar { min-height: 100vh; background: #1e293b; color: #fff; }
+        .sidebar .nav-link { color: #94a3b8; border-radius: 8px; margin-bottom: 8px; padding: 12px; transition: all 0.2s ease; }
+        .sidebar .nav-link.active { background: #3b82f6; color: #fff; }
+        .sidebar .nav-link:hover:not(.active) { background: #334155; color: #fff; }
+        
+        .card { 
+            border: none; 
+            border-radius: 12px; 
+            background-color: var(--bg-card);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); 
+            transition: background-color 0.3s ease;
+        }
+        .badge { border-radius: 6px; padding: 6px 12px; }
+        
+        /* Table Dynamic Theme Adaptability */
+        .table { color: var(--text-main) !important; }
+        .table th { background-color: var(--bg-body) !important; color: var(--text-muted) !important; border-bottom-color: var(--border-color) !important; }
+        .table td { background-color: var(--bg-card) !important; border-bottom-color: var(--border-color) !important; }
+        .table-hover tbody tr:hover td { background-color: var(--border-color) !important; opacity: 0.95; }
+        .form-control { background-color: var(--bg-card); color: var(--text-main); border-color: var(--border-color); }
+        .form-control:focus { background-color: var(--bg-card); color: var(--text-main); border-color: #3b82f6; box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25); }
+
+        /* Custom Logout Button Styling */
+        .btn-logout {
+            color: #f87171;
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            transition: all 0.3s ease;
+        }
+        .btn-logout:hover {
+            background-color: #ef4444;
+            color: white;
+            border-color: #ef4444;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Theme Toggle Button */
+        .theme-toggle-btn {
+            background: #334155;
+            color: #f59e0b;
+            border: 1px solid #475569;
+            transition: all 0.3s ease;
+        }
+        .theme-toggle-btn:hover {
+            background: #475569;
+            color: #fff;
+        }
+        [data-bs-theme="dark"] .theme-toggle-btn {
+            color: #38bdf8;
+        }
+
+        /* Settings Header Button Style */
+        .btn-settings-header {
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-card);
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+        }
+        .btn-settings-header:hover {
+            color: #3b82f6;
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        /* Mobile Breakpoint Optimization for Tables */
+        @media (max-width: 576px) {
+            .table th, .table td {
+                padding: 10px 6px !important;
+                font-size: 0.85rem;
+            }
+            .trading-form-wrapper {
+                flex-direction: column !important;
+                gap: 6px !important;
+            }
+            .trading-qty-input {
+                width: 100% !important;
+                max-width: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid">
+    <div class="row">
+        
+        <!-- ════════ LEFT SIDEBAR PANEL ════════ -->
+        <div class="col-md-3 col-lg-2 sidebar p-4 d-flex flex-column justify-content-between">
+            <div>
+                <!-- App Logo/Name -->
+                <div class="d-flex align-items-center mb-4 gap-2">
+                    <i class="bi bi-graph-up-arrow text-primary fs-3"></i>
+                    <h4 class="m-0 fw-bold tracking-wide text-white">FAZ Metrics</h4>
+                </div>
+                <hr class="text-secondary">
+
+                <!-- User Profile Summary Section -->
+                <div class="bg-dark p-3 rounded mb-4 text-center">
+                    <div class="fs-1 text-primary"><i class="bi bi-person-circle"></i></div>
+                    <h6 class="m-0 fw-bold text-white">{{ request.user.username }}</h6>
+                    <small class="text-muted d-block mb-2">{{ request.user.email|default:"user@example.com" }}</small>
+                    <span class="badge bg-success w-100 fs-6">₹<span id="wallet-balance-val">{{ wallet.balance }}</span></span>
+                </div>
+
+                <!-- Navigation Menu Links -->
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="bi bi-speedometer2 me-2"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/stocks/settings/"><i class="bi bi-gear me-2"></i> Settings</a>
+                    </li>
+                    <li class="nav-item mt-2">
+                        <a class="nav-link text-white bg-gradient btn btn-primary border-0 text-start" href="#" onclick="openAddFundsModal(event)">
+                            <i class="bi bi-wallet2 me-2"></i> Add Funds
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Footer & Theme Toggle & Logout Section -->
+            <div>
+                <!-- Theme Mode Toggle Switcher -->
+                <button class="btn theme-toggle-btn w-100 d-flex align-items-center justify-content-center gap-2 py-2 fw-semibold mb-3 rounded-3" id="themeToggleBtn" onclick="toggleThemeMode()">
+                    <i class="bi bi-sun-fill" id="themeIcon"></i> <span id="themeText">Light Mode</span>
+                </button>
+
+                <!-- Logout Button with Icon -->
+                <a class="btn btn-logout w-100 d-flex align-items-center justify-content-center gap-2 py-2 fw-semibold mb-3 rounded-3" href="/stocks/logout/">
+                    <i class="bi bi-box-arrow-right fs-5"></i> Logout
+                </a>
+                <hr class="text-secondary">
+                <p class="text-muted small text-center m-0">© 2026 StockTool Inc.</p>
+            </div>
+        </div>
+
+        <!-- ════════ RIGHT MAIN CONTENT AREA ════════ -->
+        <div class="col-md-9 col-lg-10 p-4">
+            
+            <!-- Top Header Bar with Settings Icon -->
+            <div class="d-flex justify-content-between align-items-center mb-4 card p-4 shadow-sm flex-row">
+                <div>
+                    <h2 class="fw-bold m-0">Welcome, {{ request.user.username }}!</h2>
+                    <p class="text-muted m-0">Track your investments and expenses</p>
+                </div>
+                <!-- Interactive Header Settings Button & Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-settings-header d-flex align-items-center gap-2" type="button" id="headerSettingsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-gear-fill fs-5"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="headerSettingsDropdown" style="background-color: var(--bg-card); border: 1px solid var(--border-color) !important;">
+                        <li><a class="dropdown-item py-2" href="/stocks/profile/" style="color: var(--text-main);"><i class="bi bi-person me-2 text-primary"></i> Profile Settings</a></li>
+                        <li><a class="dropdown-item py-2" href="/stocks/settings/" style="color: var(--text-main);"><i class="bi bi-sliders me-2 text-info"></i> Preferences</a></li>
+                        <li><hr class="dropdown-divider" style="border-color: var(--border-color);"></li>
+                        <li><a class="dropdown-item py-2 text-danger" href="/stocks/logout/"><i class="bi bi-box-arrow-right me-2"></i> Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <!-- Market Tables and Holdings -->
+                <div class="col-lg-8">
+                    
+                    <!-- Available Market Table (BUY) -->
+                    <div class="card mb-4">
+                        <div class="card-header bg-primary text-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h5 class="m-0 fw-bold">Available Stocks (Market)</h5>
+                            <!-- Live Search Input Box -->
+                            <div class="input-group input-group-sm" style="max-width: 250px;">
+                                <span class="input-group-text bg-white text-dark border-0"><i class="bi bi-search"></i></span>
+                                <input type="text" id="stockSearchInput" class="form-control border-0 text-dark bg-white" placeholder="Search ticker or name..." onkeyup="filterMarketStocks()">
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle m-0 text-center" id="marketStocksTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-start ps-4">Stock</th>
+                                            <th>Price & Trend</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for stock in stocks %}
+                                        <tr class="stock-row-item">
+                                            <td class="text-start ps-4">
+                                                <strong class="stock-ticker">{{ stock.ticker }}</strong> 
+                                                <br><small class="text-muted stock-name">{{ stock.name }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="fw-bold fs-6">₹{{ stock.current_price }}</span>
+                                                <br>
+                                                {% if stock.admin_stock_pnl > 0 %}
+                                                    <span class="badge bg-success-subtle text-success fw-bold p-1 px-2" style="font-size: 0.75rem;">
+                                                        <i class="bi bi-graph-up"></i> ▲ ₹{{ stock.admin_stock_pnl }}
+                                                    </span>
+                                                {% elif stock.admin_stock_pnl < 0 %}
+                                                    <span class="badge bg-danger-subtle text-danger fw-bold p-1 px-2" style="font-size: 0.75rem;">
+                                                        <i class="bi bi-graph-down"></i> ▼ ₹{{ stock.admin_stock_pnl }}
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-light text-muted fw-bold p-1 px-2" style="font-size: 0.75rem;">
+                                                        <i class="bi bi-dash-lg"></i> Flat
+                                                    </span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <!-- Added wrapper layout optimizations for small screens -->
+                                                <form method="POST" class="d-flex justify-content-center align-items-center trading-form-wrapper gap-2" onsubmit="return checkBuy(event, '{{ stock.id }}', '{{ stock.ticker }}', '{{ stock.current_price }}')">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="buy_stock" value="1">
+                                                    <input type="hidden" name="stock_id" value="{{ stock.id }}">
+                                                    <input type="number" id="qty-{{ stock.id }}" name="quantity" class="form-control form-control-sm text-center trading-qty-input" style="width: 75px;" min="1" value="1" required>
+                                                    <button type="submit" class="btn btn-sm btn-success px-3 fw-bold w-100">Buy</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        <!-- No Match Fallback Row -->
+                                        <tr id="noStocksFoundRow" style="display: none;">
+                                            <td colspan="3" class="text-center text-muted py-4">No matching stocks found.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Portfolio Holdings Table -->
+                    <div class="card">
+                        <div class="card-header bg-dark text-white py-3">
+                            <h5 class="m-0 fw-bold">Your Portfolio (Holdings)</h5>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle m-0 text-center">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-start ps-4">Stock</th>
+                                            <th>Qty Owned</th>
+                                            <th>Current Value</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in portfolio %}
+                                        <tr>
+                                            <td class="text-start ps-4 fw-bold">
+                                                {{ item.stock.ticker }}
+                                                <br><small class="text-muted" style="font-size: 0.75rem;">@ ₹{{ item.stock.current_price }}/sh</small>
+                                            </td>
+                                            <td><span class="badge bg-secondary fs-6" id="owned-qty-{{ item.id }}">{{ item.quantity }}</span></td>
+                                            <td class="fw-bold text-success">₹{{ item.current_investment_value }}</td>
+                                            <td>
+                                                <form method="POST" class="d-flex justify-content-center align-items-center trading-form-wrapper gap-2" onsubmit="return checkSell(event, '{{ item.id }}', '{{ item.stock.ticker }}', '{{ item.stock.current_price }}')">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="sell_stock" value="1">
+                                                    <input type="hidden" name="portfolio_id" value="{{ item.id }}">
+                                                    <input type="number" id="sell-qty-{{ item.id }}" name="quantity_sell" class="form-control form-control-sm text-center trading-qty-input" style="width: 75px;" min="1" max="{{ item.quantity }}" value="1" required>
+                                                    <button type="submit" class="btn btn-sm btn-danger px-3 fw-bold w-100">Sell</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">No stocks owned yet. Start trading!</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Analytics Doughnut Chart -->
+                <div class="col-lg-4">
+                    <div class="card p-4 text-center h-100 d-flex flex-column justify-content-center">
+                        <h5 class="fw-bold mb-4 text-secondary">Expense & Wallet Allocation</h5>
+                        <div style="max-width: 280px; margin: 0 auto; width: 100%;">
+                            <canvas id="userExpenseChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Hidden Form for Add Funds Processing -->
+<form id="add-funds-form" method="POST" style="display: none;">
+    {% csrf_token %}
+    <input type="hidden" name="add_funds" value="1">
+    <input type="hidden" id="add-funds-amount" name="amount" value="0">
+</form>
+
+<!-- Bootstrap JS Wrapper for Header Settings Dropdown -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // ─── 0. DARK/LIGHT MODE TOGGLE ENGINE ───
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.setAttribute('data-bs-theme', 'dark');
+        updateThemeUI(true);
+    }
+
+    function toggleThemeMode() {
+        const currentTheme = document.documentElement.getAttribute('data-bs-theme');
+        if (currentTheme === 'dark') {
+            document.documentElement.removeAttribute('data-bs-theme');
+            localStorage.setItem('theme', 'light');
+            updateThemeUI(false);
+        } else {
+            document.documentElement.setAttribute('data-bs-theme', 'dark');
+            localStorage.setItem('theme', 'dark');
+            updateThemeUI(true);
+        }
+    }
+
+    function updateThemeUI(isDark) {
+        const icon = document.getElementById('themeIcon');
+        const text = document.getElementById('themeText');
+        if (isDark) {
+            icon.className = 'bi bi-moon-stars-fill';
+            text.innerText = 'Dark Mode';
+        } else {
+            icon.className = 'bi bi-sun-fill';
+            text.innerText = 'Light Mode';
+        }
+    }
+
+    // ─── 0.1 LIVE REAL-TIME CLIENT SEARCH FILTER ───
+    function filterMarketStocks() {
+        const input = document.getElementById('stockSearchInput').value.toLowerCase().trim();
+        const rows = document.querySelectorAll('#marketStocksTable .stock-row-item');
+        let anyMatchFound = false;
+
+        rows.forEach(row => {
+            const ticker = row.querySelector('.stock-ticker').innerText.toLowerCase();
+            const name = row.querySelector('.stock-name').innerText.toLowerCase();
+
+            if (ticker.includes(input) || name.includes(input)) {
+                row.style.display = '';
+                anyMatchFound = true;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const noMatchRow = document.getElementById('noStocksFoundRow');
+        noMatchRow.style.display = anyMatchFound ? 'none' : '';
+    }
+
+    // Helper to detect current dark theme status for SweetAlert text styling
+    function getSwalClass() {
+        return document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'text-white' : 'text-dark';
+    }
+
+    // ─── 1. ADD FUNDS SWEETALERT POPUP ───
+    function openAddFundsModal(e) {
+        e.preventDefault();
+        Swal.fire({
+            title: 'Add Funds to Wallet',
+            text: 'Enter the amount you want to add (₹):',
+            input: 'number',
+            inputAttributes: { min: '100', step: '100', placeholder: 'e.g. 5000' },
+            showCancelButton: true,
+            confirmButtonColor: '#3b82f6',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-cash-coin"></i> Add Money',
+            customClass: { htmlContainer: getSwalClass() },
+            inputValidator: (value) => {
+                if (!value || parseFloat(value) <= 0) {
+                    return 'Please enter a valid positive amount!';
+                }
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.getElementById('add-funds-amount').value = result.value;
+                Swal.fire({ title: 'Adding Funds...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                document.getElementById('add-funds-form').submit();
+            }
+        });
+    }
+
+    // ─── 2. STOCK BUY VALIDATION ───
+    function checkBuy(event, stockId, ticker, currentPrice) {
+        event.preventDefault();
+        const currentForm = event.target;
+        const walletBalance = parseFloat(document.getElementById('wallet-balance-val').innerText);
+        const qty = parseInt(document.getElementById('qty-' + stockId).value);
+        const price = parseFloat(currentPrice);
+
+        const totalCost = price * qty;
+        const commission = totalCost * 0.01; 
+        const finalDeduction = totalCost + commission;
+
+        if (finalDeduction > walletBalance) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Insufficient Funds!',
+                html: `<div class="text-start p-2 border rounded bg-light-subtle text-emphasis-danger"><p class="mb-1"><b>Required:</b> ₹${finalDeduction.toFixed(2)}</p><p class="mb-0"><b>Wallet:</b> ₹${walletBalance.toFixed(2)}</p></div>`,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Got It'
+            });
+            return false;
+        }
+
+        Swal.fire({
+            title: 'Confirm Your Buy Order',
+            html: `<div class="text-start p-2 border rounded bg-light text-dark"><p class="mb-2"><b>Stock:</b> ${ticker}</p><p class="mb-2"><b>Quantity:</b> ${qty} Shares</p><p class="mb-2 text-muted"><b>Brokerage Fee (1%):</b> ₹${commission.toFixed(2)}</p><hr class="my-2"><p class="mb-0 text-success fs-5"><b>Total Payable: ₹${finalDeduction.toFixed(2)}</b></p></div>`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#198754',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Confirm & Pay'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({ title: 'Processing Buy Order...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
+                currentForm.submit();
+            }
+        });
+        return false;
+    }
+
+    // ─── 3. STOCK SELL VALIDATION ───
+    function checkSell(event, portfolioId, ticker, currentPrice) {
+        event.preventDefault();
+        const currentForm = event.target;
+        
+        const ownedQty = parseInt(document.getElementById('owned-qty-' + portfolioId).innerText);
+        const sellQty = parseInt(document.getElementById('sell-qty-' + portfolioId).value);
+        const price = parseFloat(currentPrice);
+
+        if (sellQty > ownedQty || sellQty <= 0) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Invalid Quantity!',
+                text: `You only own ${ownedQty} shares of ${ticker}. You cannot sell ${sellQty} shares.`,
+                confirmButtonColor: '#d33'
+            });
+            return false;
+        }
+
+        const totalRevenue = price * sellQty;
+        const commission = totalRevenue * 0.01;
+        const finalCredit = totalRevenue - commission;
+
+        Swal.fire({
+            title: 'Confirm Your Sell Order',
+            html: `
+                <div class="text-start p-2 border rounded bg-light text-dark">
+                    <p class="mb-2"><b>Stock:</b> ${ticker}</p>
+                    <p class="mb-2"><b>Selling Quantity:</b> ${sellQty} Shares</p>
+                    <p class="mb-2 text-muted"><b>Brokerage Deducted (1%):</b> ₹${commission.toFixed(2)}</p>
+                    <hr class="my-2">
+                    <p class="mb-0 text-danger fs-5"><b>Total Wallet Credit: ₹${finalCredit.toFixed(2)}</b></p>
+                </div>
+            `,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Confirm & Sell',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Processing Sell Order...',
+                    allowOutsideClick: false,
+                    didOpen: () => { Swal.showLoading(); }
+                });
+                currentForm.submit();
+            }
+        });
+        return false;
+    }
+
+    // ─── 4. DYNAMIC CHART INTEGRATION ───
+    fetch('/stocks/api/user-chart/')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.labels || data.labels.length === 0) {
+                document.getElementById('userExpenseChart').parentElement.innerHTML = `<p class="text-muted py-5">No allocation metrics available</p>`;
+                return;
+            }
+            const ctx = document.getElementById('userExpenseChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.data,
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#2ECC71']
+                    }]
+                },
+                options: { 
+                    responsive: true, 
+                    plugins: { 
+                        legend: { 
+                            position: 'bottom',
+                            labels: {
+                                color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#94a3b8' : '#6c757d'
+                            }
+                        } 
+                    } 
+                }
+            });
+        })
+        .catch(err => {
+            console.error("Chart loading failed:", err);
+            document.getElementById('userExpenseChart').parentElement.innerHTML = `<p class="text-muted py-5">Failed to load chart visualization</p>`;
+        });
+</script>
+</body>
+</html>

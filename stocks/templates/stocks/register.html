@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Account | StockTool</title>
+    <!-- Bootstrap 5 & Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .register-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .requirement {
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+        .invalid { color: #dc3545; }
+        .valid { color: #198754; }
+        .form-control:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+        }
+    </style>
+</head>
+<body class="d-flex align-items-center justify-content-center py-5">
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-5">
+            <div class="card register-card p-4 p-sm-5">
+                
+                <!-- Logo / Header -->
+                <div class="text-center mb-4">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary text-white rounded-circle mb-2" style="width: 50px; height: 50px;">
+                        <i class="bi bi-graph-up-arrow fs-4"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark m-0">Join FAZ Metrics </h3>
+                    <p class="text-muted small">Start managing your portfolio today</p>
+                </div>
+
+                <!-- Registration Form -->
+                <form method="POST" autocomplete="off">
+                    {% csrf_token %}
+                    <!-- Yeh block dono templates mein {% csrf_token %} ke niche paste kar do -->
+{% if messages %}
+    <div class="mt-2">
+        {% for message in messages %}
+            <div class="alert alert-danger p-2 small text-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ message }}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+                    
+                    <!-- Username Field -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small">Username</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-person text-muted"></i></span>
+                            <input type="text" name="username" class="form-control bg-light border-start-0" placeholder="Choose a unique username" required>
+                        </div>
+                    </div>
+
+                    <!-- Email Field -->
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary small">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
+                            <input type="email" name="email" class="form-control bg-light border-start-0" placeholder="name@example.com" required>
+                        </div>
+                    </div>
+
+                    <!-- Password Field -->
+                    <div class="mb-3 position-relative">
+                        <label class="form-label fw-semibold text-secondary small">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
+                            <input type="password" id="password" name="password" class="form-control bg-light border-start-0" placeholder="••••••••" required>
+                        </div>
+                    </div>
+
+                    <!-- Live Password Requirements Box -->
+                    <div class="p-3 bg-light rounded-3 mb-4 border">
+                        <h6 class="fw-bold text-dark small mb-2">Password Requirements:</h6>
+                        <div id="req-length" class="requirement invalid mb-1">
+                            <i class="bi bi-x-circle-fill me-2" id="icon-length"></i> At least 8 characters
+                        </div>
+                        <div id="req-upper" class="requirement invalid mb-1">
+                            <i class="bi bi-x-circle-fill me-2" id="icon-upper"></i> One uppercase letter (A-Z)
+                        </div>
+                        <div id="req-number" class="requirement invalid mb-1">
+                            <i class="bi bi-x-circle-fill me-2" id="icon-number"></i> One number (0-9)
+                        </div>
+                        <div id="req-special" class="requirement invalid">
+                            <i class="bi bi-x-circle-fill me-2" id="icon-special"></i> One special character (@, $, !, %, *, #)
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="submit-btn" class="btn btn-primary w-100 fw-bold py-2 shadow-sm" disabled>
+                        <i class="bi bi-person-plus-fill me-2"></i> Create Account
+                    </button>
+                </form>
+
+                <div class="text-center mt-4">
+                    <p class="text-muted small m-0">Already have an account? <a href="{% url 'login' %}" class="text-primary fw-semibold text-decoration-none">Sign In</a></p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Password Validation Script -->
+<script>
+    const passwordInput = document.getElementById('password');
+    const submitBtn = document.getElementById('submit-btn');
+
+    // Requirements elements
+    const reqs = {
+        length: { el: document.getElementById('req-length'), icon: document.getElementById('icon-length'), regex: /.{8,}/ },
+        upper: { el: document.getElementById('req-upper'), icon: document.getElementById('icon-upper'), regex: /[A-Z]/ },
+        number: { el: document.getElementById('req-number'), icon: document.getElementById('icon-number'), regex: /[0-9]/ },
+        special: { el: document.getElementById('req-special'), icon: document.getElementById('icon-special'), regex: /[@$!%*#?&]/ }
+    };
+
+    passwordInput.addEventListener('input', function() {
+        const val = passwordInput.value;
+        let allValid = true;
+
+        for (let key in reqs) {
+            const isValid = reqs[key].regex.test(val);
+            if (isValid) {
+                reqs[key].el.classList.remove('invalid');
+                reqs[key].el.classList.add('valid');
+                reqs[key].icon.classList.remove('bi-x-circle-fill');
+                reqs[key].icon.classList.add('bi-check-circle-fill');
+            } else {
+                reqs[key].el.classList.remove('valid');
+                reqs[key].el.classList.add('invalid');
+                reqs[key].icon.classList.remove('bi-check-circle-fill');
+                reqs[key].icon.classList.add('bi-x-circle-fill');
+                allValid = false;
+            }
+        }
+
+        // Agar saari requirements sahi hain toh hi button enable hoga
+        submitBtn.disabled = !allValid;
+    });
+</script>
+</body>
+</html>

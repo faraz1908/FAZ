@@ -1,0 +1,160 @@
+{% extends 'stocks/base.html' %}
+
+{% block title %}Settings | FAZ Metrics{% endblock %}
+{% block active_settings %}active{% endblock %}
+{% block header_title %}Account Settings{% endblock %}
+
+{% block content %}
+<style>
+    /* Premium Modern Glassmorphism & Tabs styling */
+    .settings-sidebar .nav-link {
+        color: var(--text-muted);
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        padding: 14px 18px;
+        font-weight: 500;
+        border-radius: 10px;
+        transition: all 0.25s ease;
+    }
+    .settings-sidebar .nav-link:hover {
+        color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.05);
+        border-color: #3b82f6;
+        transform: translateX(4px);
+    }
+    .settings-sidebar .nav-link.active {
+        color: #fff !important;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+        border-color: transparent;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+    
+    /* Clean Input Styling synced with theme */
+    .custom-form-group .form-control {
+        background-color: var(--bg-body);
+        color: var(--text-main);
+        border: 1px solid var(--border-color);
+        padding: 12px;
+        border-radius: 8px;
+        transition: all 0.2s ease;
+    }
+    .custom-form-group .form-control:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        background-color: var(--bg-body);
+        color: var(--text-main);
+    }
+    
+    .card-settings {
+        background-color: var(--bg-card);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+    }
+</style>
+
+<div class="row g-4 custom-form-group">
+    <!-- ════════ LEFT SIDEBAR TABS NAVIGATION ════════ -->
+    <div class="col-lg-3 col-md-4 settings-sidebar">
+        <div class="d-flex flex-column nav nav-pills gap-2" id="settingsTabs" role="tablist">
+            <button class="nav-link active text-start d-flex align-items-center gap-3 shadow-sm" id="profile-tab" data-bs-toggle="pill" data-bs-target="#profile" type="button" role="tab">
+                <i class="bi bi-person-gear fs-5"></i> Profile Settings
+            </button>
+            <button class="nav-link text-start d-flex align-items-center gap-3 shadow-sm" id="security-tab" data-bs-toggle="pill" data-bs-target="#security" type="button" role="tab">
+                <i class="bi bi-shield-lock fs-5"></i> Security & Password
+            </button>
+            <a href="{% url 'trade_history' %}" class="nav-link text-start d-flex align-items-center gap-3 shadow-sm">
+                <i class="bi bi-clock-history fs-5"></i> View Trade History
+            </a>
+        </div>
+    </div>
+
+    <!-- ════════ RIGHT SETTINGS PANELS AREA ════════ -->
+    <div class="col-lg-9 col-md-8">
+        <!-- Django Notification Alert Banners -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show border-0 shadow-sm rounded-3 mb-4" role="alert">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi {% if message.tags == 'error' %}bi-exclamation-triangle-fill{% else %}bi-check-circle-fill{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="tab-content" id="settingsTabsContent">
+            
+            <!-- ─── PROFILE UPDATE CONTENT TAB ─── -->
+            <div class="tab-pane fade show active" id="profile" role="tabpanel">
+                <div class="card card-settings shadow-sm p-4">
+                    <div class="border-bottom pb-3 mb-4">
+                        <h4 class="fw-bold m-0 text-primary d-flex align-items-center gap-2">
+                            <i class="bi bi-card-heading"></i> Update Personal Details
+                        </h4>
+                        <p class="text-muted small m-0 mt-1">Manage your public account identity data attributes</p>
+                    </div>
+                    
+                    <form action="{% url 'update_profile' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">First Name</label>
+                                <input type="text" class="form-control" name="first_name" value="{{ request.user.first_name }}" placeholder="Enter first name">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label text-muted small fw-bold">Last Name</label>
+                                <input type="text" class="form-control" name="last_name" value="{{ request.user.last_name }}" placeholder="Enter last name">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label text-muted small fw-bold">Email Address</label>
+                                <input type="email" class="form-control" name="email" value="{{ request.user.email }}" placeholder="username@example.com">
+                            </div>
+                            <div class="col-12 mt-4 text-end">
+                                <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold rounded-3 d-inline-flex align-items-center gap-2">
+                                    <i class="bi bi-check-circle"></i> Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- ─── CRYPTO PASSWORD SECURITY CONTENT TAB ─── -->
+            <div class="tab-pane fade" id="security" role="tabpanel">
+                <div class="card card-settings shadow-sm p-4">
+                    <div class="border-bottom pb-3 mb-4">
+                        <h4 class="fw-bold m-0 text-danger d-flex align-items-center gap-2">
+                            <i class="bi bi-lock-fill"></i> Change Authentication Password
+                        </h4>
+                        <p class="text-muted small m-0 mt-1">Ensure your investment portfolio security with a solid password hashing setup</p>
+                    </div>
+                    
+                    <form action="{% url 'change_password' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            {% for field in password_form %}
+                                <div>
+                                    <label class="form-label text-muted small fw-bold">{{ field.label }}</label>
+                                    <input type="password" name="{{ field.html_name }}" class="form-control" placeholder="••••••••" required>
+                                    {% if field.help_text %}
+                                        <div class="form-text text-muted mt-1" style="font-size: 0.75rem; line-height: 1.4;">
+                                            {{ field.help_text|safe }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                            <div class="text-end mt-4">
+                                <button type="submit" class="btn btn-danger px-4 py-2 fw-semibold rounded-3 d-inline-flex align-items-center gap-2">
+                                    <i class="bi bi-key-fill"></i> Update Password
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

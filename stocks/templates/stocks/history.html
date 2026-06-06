@@ -1,0 +1,76 @@
+{% extends 'stocks/base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold m-0"><i class="fas fa-history text-muted me-2"></i>Transaction Ledger</h3>
+            <p class="text-muted small m-0">Aapke account ke saare trades aur deposits ka track record</p>
+        </div>
+        <a href="{% url 'user_settings' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i> Back to Settings
+        </a>
+    </div>
+
+    <!-- Main History Card Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle m-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">ID</th>
+                            <th>Date & Time</th>
+                            <th>Action</th>
+                            <th>Stock / Asset</th>
+                            <th>Quantity</th>
+                            <th>Rate</th>
+                            <th>Total Amount</th>
+                            <th class="pe-4">Brokerage</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in history %}
+                        <tr>
+                            <td class="ps-4 text-muted small">#{{ log.id }}</td>
+                            <td class="small">{{ log.timestamp|date:"d M Y, h:i A" }}</td>
+                            <td>
+                                {% if log.transaction_type == 'BUY' %}
+                                    <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5 fw-semibold">BUY</span>
+                                {% elif log.transaction_type == 'SELL' %}
+                                    <span class="badge bg-success-subtle text-success px-2.5 py-1.5 fw-semibold">SELL</span>
+                                {% else %}
+                                    <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 fw-semibold">DEPOSIT</span>
+                                {% endif %}
+                            </td>
+                            <td class="fw-bold text-dark">
+                                {% if log.stock %}
+                                    {{ log.stock.name }} <span class="text-muted small fw-normal">({{ log.stock.ticker }})</span>
+                                {% else %}
+                                    <span class="text-muted italic">— (Cash Fund)</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ log.quantity|default:"0" }}</td>
+                            <td>₹{{ log.price_at_transaction|default:"0.00" }}</td>
+                            <td class="fw-bold {% if log.transaction_type == 'SELL' %}text-success{% elif log.transaction_type == 'BUY' %}text-danger{% else %}text-primary{% endif %}">
+                                {% if log.transaction_type == 'SELL' %}+{% elif log.transaction_type == 'BUY' %}-{% endif %}₹{{ log.total_amount }}
+                            </td>
+                            <td class="pe-4 text-muted">₹{{ log.admin_commission }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-5">
+                                <div class="text-muted">
+                                    <i class="fas fa-folder-open display-4 mb-3 d-block text-black-50"></i>
+                                    Abhi tak koi transaction record nahi mila.
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
