@@ -1,28 +1,33 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-# 1. Profile Model:
+# 1. Profile Model
 class UserWallet(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     balance = models.DecimalField(max_digits=12, decimal_places=2, default=10000.00) # Default 10k balance
 
     def __str__(self):
-        return f"{self.user.username}'s Wallet - {self.balance}"
+        return f"{self.user.username}'s Wallet - ₹{self.balance}"
 
-# 2. Stock Model: 
+
+# 2. Stock Model (Enhanced with volume counters for Admin Analytics)
 class Stock(models.Model):
     ticker = models.CharField(max_length=10, unique=True) # e.g., AAPL, RELIANCE
     name = models.CharField(max_length=100)
     current_price = models.DecimalField(max_digits=10, decimal_places=2)
     initial_price = models.DecimalField(max_digits=10, decimal_places=2) # P&L calculate karne ke liye
+    
+    # Analytics Features: Konsa stock sabse jyada buy/sell hua track karne ke liye counters
+    total_buy_count = models.PositiveIntegerField(default=0)
+    total_sell_count = models.PositiveIntegerField(default=0)
 
-    # Admin  profit/loss  
     @property
     def admin_stock_pnl(self):
         return self.current_price - self.initial_price
 
     def __str__(self):
         return f"{self.name} ({self.ticker}) - ₹{self.current_price}"
+
 
 # 3. User Portfolio: User ne kaunsa stock kitna kharida
 class UserPortfolio(models.Model):
@@ -37,20 +42,22 @@ class UserPortfolio(models.Model):
     def __str__(self):
         return f"{self.user.username} holds {self.quantity} shares of {self.stock.ticker}"
 
-# 4. Transaction Model:
+
+# 4. Transaction Model (Kis user ne konsa stock kharida/becha timestamp ke sath)
 class Transaction(models.Model):
     TRANSACTION_TYPES = (
         ('BUY', 'Buy'),
         ('SELL', 'Sell'),
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    stock = models.ForeignKey(Stock, on_delete=models.CASCADE)
+    stock = models.ForeignKey(Stock, on_delete=models.CASCADE, null=True, blank=True)
     transaction_type = models.CharField(max_length=4, choices=TRANSACTION_TYPES)
     quantity = models.PositiveIntegerField()
     price_at_transaction = models.DecimalField(max_digits=10, decimal_places=2)
     total_amount = models.DecimalField(max_digits=12, decimal_places=2) # User ka Expense
-    admin_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) # Admin ka direct profit
+    admin_commission = models.DecimalField(max_digits=10, decimal_places=2, default=0.00) # Admin ka profit
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.transaction_type} - {self.stock.ticker}"
+        ticker_sym = self.stock.ticker if self.stock else "N/A"
+        return f"{self.user.username} - {self.transaction_type} - {ticker_sym}"

@@ -6,13 +6,19 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('register/', views.register_view, name='register'),
     path('logout/', views.logout_view, name='logout'),
-    path('dashboard/', views.user_dashboard, name='user_dashboard'),
+    
+    # User Dashboard & Analytics
     path('dashboard/', views.user_dashboard, name='user_dashboard'),
     path('api/user-chart/', views.user_chart_data, name='user_chart_data'),
     
+    # 🔗 NEW FEATURE: Stock Analysis Trend Line API Endpoint (Popup Chart ke liye)
+    path('api/stock-trend/<int:stock_id>/', views.stock_trend_api, name='stock_trend_api'),
+    
+    # Admin Control Analytics
     path('admin-analytics/', views.admin_dashboard, name='admin_dashboard'),
     path('api/admin-chart/', views.admin_chart_data, name='admin_chart_data'),
     path('admin-hq/', views.admin_dashboard, name='admin_dashboard'),
+    
     # Settings Main Page
     path('settings/', views.user_settings, name='user_settings'),
     

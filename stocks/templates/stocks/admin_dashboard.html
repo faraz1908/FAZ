@@ -164,19 +164,16 @@
 
         /* 📱 MOBILE FIXES: Media Queries for Smartphones & Tablets */
         @media (max-width: 991.98px) {
-            /* Hide Desktop Sidebar */
             .sidebar {
                 display: none !important;
             }
 
-            /* Main Content takes full width on mobile without breaks */
             .main-content {
                 margin-left: 0 !important;
                 padding: 1.25rem !important;
                 padding-bottom: calc(var(--mobile-nav-height) + 2rem) !important;
             }
 
-            /* Fixed Bottom Mobile Navigation Dock */
             .mobile-nav-dock {
                 position: fixed;
                 bottom: 0;
@@ -214,12 +211,10 @@
                 color: #3b82f6 !important;
             }
 
-            /* Responsive Text Scaling for Metrics */
             .glass-card h3 {
                 font-size: 1.45rem !important;
             }
 
-            /* Form Inline Fixes for Mobile Layout */
             .d-inline-flex {
                 display: flex !important;
                 width: 100%;
@@ -237,7 +232,6 @@
                 flex: 1;
             }
 
-            /* Header alignments on small devices */
             .header-node-container {
                 text-align: center;
                 flex-direction: column !important;
@@ -246,7 +240,6 @@
             }
         }
 
-        /* Web View Helper Utilities */
         @media (min-width: 992px) {
             .mobile-nav-dock {
                 display: none !important;
@@ -302,7 +295,7 @@
             <ul class="nav flex-column">
                 <li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-grid-1x2-fill me-3"></i>Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="#stock-control"><i class="bi bi-sliders2 me-3"></i>Asset Valuation</a></li>
-                <li class="nav-item"><a class="nav-link" href="#recharge-analytics-section"><i class="bi bi-wallet2 me-3"></i>Recharge Flow</a></li>
+                <li class="nav-item"><a class="nav-link" href="#order-stream-matrix"><i class="bi bi-arrow-down-up me-3"></i>Order Stream</a></li>
                 <li class="nav-item"><a class="nav-link" href="#system-audit-matrix"><i class="bi bi-terminal-box me-3"></i>System Matrices</a></li>
             </ul>
         </div>
@@ -330,9 +323,9 @@
             <i class="bi bi-sliders2"></i>
             <span>Assets</span>
         </a>
-        <a href="#recharge-analytics-section" class="mobile-nav-item">
-            <i class="bi bi-wallet2"></i>
-            <span>Flow</span>
+        <a href="#order-stream-matrix" class="mobile-nav-item">
+            <i class="bi bi-arrow-down-up"></i>
+            <span>Orders</span>
         </a>
         <a href="#themeToggle" id="mobileThemeToggle" class="mobile-nav-item" style="color: #eab308;">
             <i class="bi bi-moon-stars-fill" id="mobileThemeIcon"></i>
@@ -347,6 +340,17 @@
     <!-- ════════ MAIN METRICS CONSOLE CONTAINER ════════ -->
     <div class="main-content">
         
+        <!-- ─── SUNDAY PROTOCOL ENFORCEMENT BANNER ─── -->
+        {% if is_market_closed %}
+        <div class="alert alert-danger border-danger d-flex align-items-center gap-3 rounded-4 p-3 mb-4 shadow-sm animate__animated animate__fadeIn">
+            <i class="bi bi-lock-fill fs-3 text-danger"></i>
+            <div>
+                <strong class="d-block" style="letter-spacing: 0.02em;">SUNDAY OPERATIONS PROTOCOL ENGAGED</strong>
+                <span class="small opacity-70">The market system is safely locked down for weekly index maintenance. Platform asset mutations and currency balances are completely frozen.</span>
+            </div>
+        </div>
+        {% endif %}
+
         <!-- Header Node Header System -->
         <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3 header-node-container">
             <div>
@@ -372,13 +376,13 @@
             <div class="col-6 col-xl-3">
                 <div class="glass-card p-3">
                     <span class="text-muted small text-uppercase fw-bold" style="font-size:0.7rem;">Platform Funds</span>
-                    <h3 class="fw-bold mt-1 mb-0 text-truncate">打{{ total_platform_funds|floatformat:2 }}</h3>
+                    <h3 class="fw-bold mt-1 mb-0 text-truncate">₹{{ total_platform_funds|floatformat:2 }}</h3>
                 </div>
             </div>
             <div class="col-6 col-xl-3">
                 <div class="glass-card p-3">
                     <span class="text-muted small text-uppercase fw-bold" style="font-size:0.7rem;">Commission Yield</span>
-                    <h3 class="fw-bold mt-1 mb-0 text-success text-truncate">打{{ total_commission|floatformat:2 }}</h3>
+                    <h3 class="fw-bold mt-1 mb-0 text-success text-truncate">₹{{ total_commission|floatformat:2 }}</h3>
                 </div>
             </div>
             <div class="col-6 col-xl-3">
@@ -390,7 +394,7 @@
             <div class="col-6 col-xl-3">
                 <div class="glass-card p-3">
                     <span class="text-muted small text-uppercase fw-bold" style="font-size:0.7rem;">Hot Asset</span>
-                    <h3 class="fw-bold mt-1 mb-0 text-info text-truncate">{{ hot_stock.ticker }}</h3>
+                    <h3 class="fw-bold mt-1 mb-0 text-info text-truncate" title="Buys & Sells Vol: {{ hot_stock.total_qty }}">{{ hot_stock.ticker|default:"N/A" }}</h3>
                 </div>
             </div>
         </div>
@@ -407,7 +411,7 @@
             </div>
             <div class="col-lg-5">
                 <div class="glass-card">
-                    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2"><i class="bi bi-wallet2 text-success"></i> Capital Flow Analysis</h6>
+                    <h6 class="fw-bold mb-3 d-flex align-items-center gap-2"><i class="bi bi-pie-chart-fill text-success"></i> Asset Volatility Matrix</h6>
                     <div style="height: 240px; position: relative; width: 100%;">
                         <canvas id="rechargeFlowChart"></canvas>
                     </div>
@@ -435,14 +439,14 @@
                         <tr class="border-bottom border-light-subtle">
                             <td><span class="badge bg-primary-subtle text-primary border border-primary-subtle fw-bold px-2 py-1">{{ stock.ticker }}</span></td>
                             <td class="fw-semibold text-truncate" style="max-width: 120px;">{{ stock.name }}</td>
-                            <td class="text-center fw-bold text-warning">打{{ stock.current_price }}</td>
+                            <td class="text-center fw-bold text-warning">₹{{ stock.current_price }}</td>
                             <td class="text-center">
                                 <form method="POST" action="{% url 'admin_dashboard' %}" class="d-inline-flex gap-1" onsubmit="confirmPriceManipulation(event, '{{ stock.ticker }}')">
                                     {% csrf_token %}
                                     <input type="hidden" name="stock_id" value="{{ stock.id }}">
                                     <input type="hidden" name="update_price" value="1">
-                                    <input type="number" step="0.01" name="new_price" class="form-control form-control-sm price-input-box text-center shadow-sm" value="{{ stock.current_price }}" required>
-                                    <button type="submit" class="btn btn-sm btn-primary px-2">Set</button>
+                                    <input type="number" step="0.01" name="new_price" class="form-control form-control-sm price-input-box text-center shadow-sm" value="{{ stock.current_price }}" required {% if is_market_closed %}disabled{% endif %}>
+                                    <button type="submit" class="btn btn-sm btn-primary px-2" {% if is_market_closed %}disabled{% endif %}>Set</button>
                                 </form>
                             </td>
                             <td class="text-center">
@@ -451,8 +455,8 @@
                                     <input type="hidden" name="stock_id" value="{{ stock.id }}">
                                     <input type="hidden" name="adjust_price" value="1">
                                     <div class="btn-group shadow-sm">
-                                        <button type="submit" name="direction" value="up" class="btn btn-sm btn-outline-success py-1">+5%</button>
-                                        <button type="submit" name="direction" value="down" class="btn btn-sm btn-outline-danger py-1">-5%</button>
+                                        <button type="submit" name="direction" value="up" class="btn btn-sm btn-outline-success py-1" {% if is_market_closed %}disabled{% endif %}>+5%</button>
+                                        <button type="submit" name="direction" value="down" class="btn btn-sm btn-outline-danger py-1" {% if is_market_closed %}disabled{% endif %}>-5%</button>
                                     </div>
                                 </form>
                             </td>
@@ -460,7 +464,7 @@
                                 <form method="POST" action="{% url 'admin_dashboard' %}" class="d-inline" onsubmit="return confirm('Purge asset completely?');">
                                     {% csrf_token %}
                                     <input type="hidden" name="stock_id" value="{{ stock.id }}">
-                                    <button type="submit" name="delete_stock" value="1" class="btn btn-sm btn-outline-danger px-2 py-1 rounded-3">
+                                    <button type="submit" name="delete_stock" value="1" class="btn btn-sm btn-outline-danger px-2 py-1 rounded-3" {% if is_market_closed %}disabled{% endif %}>
                                         <i class="bi bi-trash3-fill"></i>
                                     </button>
                                 </form>
@@ -469,6 +473,47 @@
                         {% empty %}
                         <tr>
                             <td colspan="6" class="text-muted py-4 text-center">No structural assets detected in registry.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ─── REAL-TIME TRADE LEDGER STREAM ENGINE (WHO BOUGHT WHAT) ─── -->
+        <div class="glass-card mb-4" id="order-stream-matrix">
+            <h6 class="fw-bold mb-3 d-flex align-items-center gap-2"><i class="bi bi-arrow-down-up text-info"></i> Real-Time Trade Stream Ledger</h6>
+            <div class="table-responsive" style="max-height: 350px; overflow-y:auto;">
+                <table class="table align-middle table-hover text-nowrap">
+                    <thead>
+                        <tr>
+                            <th>OPERATOR (TRADER)</th>
+                            <th>ASSET NODE</th>
+                            <th class="text-center">ORDER EXECUTION</th>
+                            <th class="text-center">VOLUME (QTY)</th>
+                            <th class="text-center">STRIKE VALUATION</th>
+                            <th class="text-end">COMMISSION CAPTURED</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in user_stock_purchases %}
+                        <tr class="border-bottom border-light-subtle">
+                            <td class="fw-bold text-primary"><i class="bi bi-person-chip me-2"></i>{{ order.user.username }}</td>
+                            <td><span class="badge bg-secondary-subtle text-light border border-secondary fw-semibold px-2 py-1">{{ order.stock.ticker }}</span></td>
+                            <td class="text-center">
+                                {% if order.transaction_type == 'BUY' %}
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">BUY EXECUTION</span>
+                                {% else %}
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">SELL LIQUIDATION</span>
+                                {% endif %}
+                            </td>
+                            <td class="text-center fw-semibold">{{ order.quantity }} units</td>
+                            <td class="text-center text-warning fw-bold">打{{ order.price_at_transaction }}</td>
+                            <td class="text-end text-success fw-bold">+打{{ order.admin_commission|floatformat:2 }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-muted py-4 text-center">No live trade matrix instances recorded yet.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -549,7 +594,7 @@
                     <h6 class="modal-title fw-bold d-flex align-items-center gap-2" id="addStockModalLabel">
                         <i class="bi bi-plus-circle-fill text-primary"></i> Register New Node Asset
                     </h6>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 
                 <form method="POST" action="{% url 'admin_dashboard' %}">
@@ -559,31 +604,32 @@
                     <div class="modal-body p-3">
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-muted mb-1">ASSET TICKER / SYMBOL</label>
-                            <input type="text" name="ticker" class="form-control modal-input" placeholder="e.g. BTC, TSLA" required autocomplete="off">
+                            <input type="text" name="ticker" class="form-control modal-input" placeholder="e.g. BTC, TSLA" required autocomplete="off" {% if is_market_closed %}disabled{% endif %}>
                         </div>
                         <div class="mb-3">
                             <label class="form-label small fw-bold text-muted mb-1">COMPANY NAME</label>
-                            <input type="text" name="name" class="form-control modal-input" placeholder="e.g. Tesla Motors Inc." required autocomplete="off">
+                            <input type="text" name="name" class="form-control modal-input" placeholder="e.g. Tesla Motors Inc." required autocomplete="off" {% if is_market_closed %}disabled{% endif %}>
                         </div>
                         <div class="mb-2">
                             <label class="form-label small fw-bold text-muted mb-1">INITIAL VALUATION (打)</label>
-                            <input type="number" step="0.01" name="current_price" class="form-control modal-input" placeholder="0.00" required autocomplete="off">
+                            <input type="number" step="0.01" name="current_price" class="form-control modal-input" placeholder="0.00" required autocomplete="off" {% if is_market_closed %}disabled{% endif %}>
                         </div>
                     </div>
                     <div class="modal-footer border-top border-light-subtle p-2 bg-opacity-10 bg-black">
                         <button type="button" class="btn btn-sm btn-outline-secondary px-3 py-2" data-bs-dismiss="modal">Abort</button>
-                        <button type="submit" class="btn btn-sm btn-primary px-3 py-2 border-0" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">Deploy Asset</button>
+                        <button type="submit" class="btn btn-sm btn-primary px-3 py-2 border-0" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);" {% if is_market_closed %}disabled{% endif %}>Deploy Asset</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap Bundle JS (Required for Modals) -->
+    <!-- Bootstrap Bundle JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
     <!-- ════════ CONTROL SYSTEM ENGINES & CHART RE-RENDERING HOOKS ════════ -->
     <script>
+        // Live Clock Engine
         setInterval(() => {
             const now = new Date();
             document.getElementById('liveClock').innerText = now.toTimeString().split(' ')[0];
@@ -598,9 +644,11 @@
         let pnlChartInstance = null;
         let flowChartInstance = null;
 
+        // Initialize Theme Setup
         const savedTheme = localStorage.getItem('adminTheme') || 'dark';
         htmlElement.setAttribute('data-bs-theme', savedTheme);
         updateToggleIcons(savedTheme);
+        renderCharts(savedTheme);
 
         function toggleThemeLogic() {
             const currentTheme = htmlElement.getAttribute('data-bs-theme');
@@ -649,6 +697,7 @@
             });
         }
 
+        // Render Charts with dynamic colors based on theme configuration
         function renderCharts(theme) {
             const gridColor = theme === 'dark' ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.06)';
             const tickColor = theme === 'dark' ? '#9ca3af' : '#4b5563';
@@ -659,82 +708,92 @@
             if (pnlChartInstance) pnlChartInstance.destroy();
             if (flowChartInstance) flowChartInstance.destroy();
 
+            // Compile Backend context values safely 
             const labels = [];
             const pnlData = [];
+            const buyCounts = [];
+            const sellCounts = [];
+
             {% for stock in all_stocks %}
                 labels.push("{{ stock.ticker }}");
                 pnlData.push({{ stock.admin_stock_pnl|default:0 }});
+                buyCounts.push({{ stock.total_buy_count|default:0 }});
+                sellCounts.push({{ stock.total_sell_count|default:0 }});
             {% endfor %}
 
             const backgroundColors = pnlData.map(val => val >= 0 ? 'rgba(34, 197, 94, 0.25)' : 'rgba(239, 68, 68, 0.25)');
             const borderColors = pnlData.map(val => val >= 0 ? 'rgb(34, 197, 94)' : 'rgb(239, 68, 68)');
 
-            if(labels.length > 0) {
-                pnlChartInstance = new Chart(pnlCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: 'Yield Matrix',
-                            data: pnlData,
-                            backgroundColor: backgroundColors,
-                            borderColor: borderColors,
-                            borderWidth: 2,
-                            borderRadius: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            y: { grid: { color: gridColor }, ticks: { color: tickColor } },
-                            x: { grid: { display: false }, ticks: { color: tickColor } }
-                        }
-                    }
-                });
-            }
-
-            const rechargeAmounts = [];
-            const rechargeLabels = [];
-            {% for tx in fund_transactions|slice:":7" %}
-                rechargeAmounts.push({{ tx.total_amount }});
-                rechargeLabels.push("{{ tx.user.username }}");
-            {% endfor %}
-
-            rechargeLabels.reverse();
-            rechargeAmounts.reverse();
-
-            flowChartInstance = new Chart(flowCtx, {
-                type: 'line',
+            // Chart 1: Profit / Loss Bar Matrix
+            pnlChartInstance = new Chart(pnlCtx, {
+                type: 'bar',
                 data: {
-                    labels: rechargeLabels.length ? rechargeLabels : ["No Data"],
+                    labels: labels.length > 0 ? labels : ['No Data'],
                     datasets: [{
-                        label: 'Liquid Recharges',
-                        data: rechargeAmounts.length ? rechargeAmounts : [0],
-                        borderColor: '#22c55e',
-                        backgroundColor: 'rgba(34, 197, 94, 0.05)',
-                        fill: true,
-                        tension: 0.3,
-                        borderWidth: 2.5,
-                        pointBackgroundColor: '#22c55e'
+                        label: 'Yield Delta Matrix (PnL)',
+                        data: pnlData.length > 0 ? pnlData : [0],
+                        backgroundColor: backgroundColors.length > 0 ? backgroundColors : 'rgba(59, 130, 246, 0.25)',
+                        borderColor: borderColors.length > 0 ? borderColors : 'rgb(59, 130, 246)',
+                        borderWidth: 2,
+                        borderRadius: 6
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
+                    plugins: {
+                        legend: { display: false }
+                    },
                     scales: {
-                        y: { grid: { color: gridColor }, ticks: { color: tickColor } },
-                        x: { grid: { display: false }, ticks: { color: tickColor } }
+                        x: { grid: { color: gridColor }, ticks: { color: tickColor } },
+                        y: { grid: { color: gridColor }, ticks: { color: tickColor } }
+                    }
+                }
+            });
+
+            // Chart 2: Cumulative Asset Operational Velocity (Buys vs Sells)
+            flowChartInstance = new Chart(flowCtx, {
+                type: 'radar',
+                data: {
+                    labels: labels.length > 0 ? labels : ['No Data'],
+                    datasets: [
+                        {
+                            label: 'Total Buy Orders',
+                            data: buyCounts.length > 0 ? buyCounts : [0],
+                            backgroundColor: 'rgba(59, 130, 246, 0.15)',
+                            borderColor: '#3b82f6',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#3b82f6'
+                        },
+                        {
+                            label: 'Total Sell Orders',
+                            data: sellCounts.length > 0 ? sellCounts : [0],
+                            backgroundColor: 'rgba(234, 179, 8, 0.15)',
+                            borderColor: '#eab308',
+                            borderWidth: 2,
+                            pointBackgroundColor: '#eab308'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: tickColor, font: { size: 10, weight: 600 } }
+                        }
+                    },
+                    scales: {
+                        r: {
+                            grid: { color: gridColor },
+                            angleLines: { color: gridColor },
+                            pointLabels: { color: tickColor, font: { size: 10 } },
+                            ticks: { display: false }
+                        }
                     }
                 }
             });
         }
-
-        document.addEventListener("DOMContentLoaded", () => {
-            renderCharts(htmlElement.getAttribute('data-bs-theme'));
-        });
     </script>
 </body>
 </html>

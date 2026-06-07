@@ -54,7 +54,7 @@
         .table { color: var(--text-main) !important; }
         .table th { background-color: var(--bg-body) !important; color: var(--text-muted) !important; border-bottom-color: var(--border-color) !important; }
         .table td { background-color: var(--bg-card) !important; border-bottom-color: var(--border-color) !important; }
-        .table-hover tbody tr:hover td { background-color: var(--border-color) !important; opacity: 0.95; }
+        .table-hover tbody tr:hover td { background-color: var(--border-color) !important; opacity: 0.95; cursor: pointer; }
         .form-control { background-color: var(--bg-card); color: var(--text-main); border-color: var(--border-color); }
         .form-control:focus { background-color: var(--bg-card); color: var(--text-main); border-color: #3b82f6; box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25); }
 
@@ -222,9 +222,9 @@
                                     </thead>
                                     <tbody>
                                         {% for stock in stocks %}
-                                        <tr class="stock-row-item">
+                                        <tr class="stock-row-item" onclick="viewStockDetails('{{ stock.id }}', '{{ stock.ticker }}', '{{ stock.name }}', '{{ stock.current_price }}', '{{ stock.admin_stock_pnl }}')">
                                             <td class="text-start ps-4">
-                                                <strong class="stock-ticker">{{ stock.ticker }}</strong> 
+                                                <strong class="stock-ticker text-primary">{{ stock.ticker }}</strong> 
                                                 <br><small class="text-muted stock-name">{{ stock.name }}</small>
                                             </td>
                                             <td>
@@ -244,19 +244,17 @@
                                                     </span>
                                                 {% endif %}
                                             </td>
-                                            <td>
-                                                <!-- Added wrapper layout optimizations for small screens -->
+                                            <td onclick="event.stopPropagation();">
                                                 <form method="POST" class="d-flex justify-content-center align-items-center trading-form-wrapper gap-2" onsubmit="return checkBuy(event, '{{ stock.id }}', '{{ stock.ticker }}', '{{ stock.current_price }}')">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="buy_stock" value="1">
                                                     <input type="hidden" name="stock_id" value="{{ stock.id }}">
-                                                    <input type="number" id="qty-{{ stock.id }}" name="quantity" class="form-control form-control-sm text-center trading-qty-input" style="width: 75px;" min="1" value="1" required>
+                                                    <input type="number" id="qty-{{ stock.id }}" name="quantity" class="form-control form-control-sm text-center trading-qty-input" style="width: 75px;" min="1" value="1" step="1" required>
                                                     <button type="submit" class="btn btn-sm btn-success px-3 fw-bold w-100">Buy</button>
                                                 </form>
                                             </td>
                                         </tr>
                                         {% endfor %}
-                                        <!-- No Match Fallback Row -->
                                         <tr id="noStocksFoundRow" style="display: none;">
                                             <td colspan="3" class="text-center text-muted py-4">No matching stocks found.</td>
                                         </tr>
@@ -284,19 +282,19 @@
                                     </thead>
                                     <tbody>
                                         {% for item in portfolio %}
-                                        <tr>
+                                        <tr onclick="viewStockDetails('{{ item.stock.id }}', '{{ item.stock.ticker }}', '{{ item.stock.name }}', '{{ item.stock.current_price }}', '0')">
                                             <td class="text-start ps-4 fw-bold">
-                                                {{ item.stock.ticker }}
+                                                <span class="text-primary">{{ item.stock.ticker }}</span>
                                                 <br><small class="text-muted" style="font-size: 0.75rem;">@ ₹{{ item.stock.current_price }}/sh</small>
                                             </td>
                                             <td><span class="badge bg-secondary fs-6" id="owned-qty-{{ item.id }}">{{ item.quantity }}</span></td>
                                             <td class="fw-bold text-success">₹{{ item.current_investment_value }}</td>
-                                            <td>
+                                            <td onclick="event.stopPropagation();">
                                                 <form method="POST" class="d-flex justify-content-center align-items-center trading-form-wrapper gap-2" onsubmit="return checkSell(event, '{{ item.id }}', '{{ item.stock.ticker }}', '{{ item.stock.current_price }}')">
                                                     {% csrf_token %}
                                                     <input type="hidden" name="sell_stock" value="1">
                                                     <input type="hidden" name="portfolio_id" value="{{ item.id }}">
-                                                    <input type="number" id="sell-qty-{{ item.id }}" name="quantity_sell" class="form-control form-control-sm text-center trading-qty-input" style="width: 75px;" min="1" max="{{ item.quantity }}" value="1" required>
+                                                    <input type="number" id="sell-qty-{{ item.id }}" name="quantity_sell" class="form-control form-control-sm text-center trading-qty-input" style="width: 75px;" min="1" max="{{ item.quantity }}" value="1" step="1" required>
                                                     <button type="submit" class="btn btn-sm btn-danger px-3 fw-bold w-100">Sell</button>
                                                 </form>
                                             </td>
@@ -328,6 +326,79 @@
     </div>
 </div>
 
+<!-- ════════ INTERACTIVE STOCK DETAIL MODAL ════════ -->
+<div class="modal fade" id="stockDetailModal" tabindex="-1" aria-labelledby="stockDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow-lg" style="background-color: var(--bg-card); color: var(--text-main);">
+            <div class="modal-header border-bottom" style="border-color: var(--border-color) !important;">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="bi bi-activity text-primary fs-3"></i>
+                    <div>
+                        <h5 class="modal-title fw-bold m-0" id="modalStockTicker">STOCK TICKER</h5>
+                        <small class="text-muted" id="modalStockName">Company Name Full</small>
+                    </div>
+                </div>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="modal" aria-label="Close" style="filter: var(--bs-theme-invert, none);"></button>
+            </div>
+            <div class="modal-body p-4">
+                <!-- Stock Price Overview Cards -->
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <div class="p-3 rounded border" style="background-color: var(--bg-body); border-color: var(--border-color) !important;">
+                            <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Current Price</small>
+                            <h3 class="fw-bold m-0 text-primary mt-1" id="modalStockPrice">₹0.00</h3>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 rounded border" style="background-color: var(--bg-body); border-color: var(--border-color) !important;">
+                            <small class="text-muted d-block text-uppercase fw-semibold" style="font-size: 0.75rem;">Today's Trend</small>
+                            <h3 class="fw-bold m-0 mt-1" id="modalStockPnL">₹0.00</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Key Metrics Technical Details Layout -->
+                <h6 class="fw-bold mb-3"><i class="bi bi-bar-chart-steps text-info me-2"></i>Key Market Fundamentals</h6>
+                <div class="row g-3 text-center mb-4">
+                    <div class="col-6 col-sm-3">
+                        <div class="p-2 border rounded">
+                            <small class="text-muted d-block">52W High</small>
+                            <span class="fw-bold text-success" id="detail52High">₹0.00</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <div class="p-2 border rounded">
+                            <small class="text-muted d-block">52W Low</small>
+                            <span class="fw-bold text-danger" id="detail52Low">₹0.00</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <div class="p-2 border rounded">
+                            <small class="text-muted d-block">Market Cap</small>
+                            <span class="fw-bold" id="detailMarketCap">0.00 Cr</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-sm-3">
+                        <div class="p-2 border rounded">
+                            <small class="text-muted d-block">P/E Ratio</small>
+                            <span class="fw-bold text-warning" id="detailPERatio">0.0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mini Technical Analysis Line Chart Canvas Wrapper -->
+                <h6 class="fw-bold mb-3"><i class="bi bi-graph-up-arrow text-success me-2"></i>Performance Timeline (Price Trend)</h6>
+                <div class="p-3 border rounded bg-white" style="max-height: 250px; position: relative;">
+                    <canvas id="stockTrendChart" style="max-height: 230px;"></canvas>
+                </div>
+            </div>
+            <div class="modal-footer border-top" style="border-color: var(--border-color) !important;">
+                <button type="button" class="btn btn-secondary px-4 fw-semibold" data-bs-dismiss="modal">Close Dashboard</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Hidden Form for Add Funds Processing -->
 <form id="add-funds-form" method="POST" style="display: none;">
     {% csrf_token %}
@@ -335,10 +406,12 @@
     <input type="hidden" id="add-funds-amount" name="amount" value="0">
 </form>
 
-<!-- Bootstrap JS Wrapper for Header Settings Dropdown -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
+    let expenseChartInstance = null;
+    let stockDetailChartInstance = null;
+
     // ─── 0. DARK/LIGHT MODE TOGGLE ENGINE ───
     if (localStorage.getItem('theme') === 'dark') {
         document.documentElement.setAttribute('data-bs-theme', 'dark');
@@ -347,26 +420,29 @@
 
     function toggleThemeMode() {
         const currentTheme = document.documentElement.getAttribute('data-bs-theme');
-        if (currentTheme === 'dark') {
-            document.documentElement.removeAttribute('data-bs-theme');
-            localStorage.setItem('theme', 'light');
-            updateThemeUI(false);
-        } else {
+        const isDark = currentTheme !== 'dark';
+        
+        if (isDark) {
             document.documentElement.setAttribute('data-bs-theme', 'dark');
             localStorage.setItem('theme', 'dark');
-            updateThemeUI(true);
+        } else {
+            document.documentElement.removeAttribute('data-bs-theme');
+            localStorage.setItem('theme', 'light');
+        }
+        updateThemeUI(isDark);
+        
+        if (expenseChartInstance) {
+            expenseChartInstance.options.plugins.legend.labels.color = isDark ? '#94a3b8' : '#6c757d';
+            expenseChartInstance.update();
         }
     }
 
     function updateThemeUI(isDark) {
         const icon = document.getElementById('themeIcon');
         const text = document.getElementById('themeText');
-        if (isDark) {
-            icon.className = 'bi bi-moon-stars-fill';
-            text.innerText = 'Dark Mode';
-        } else {
-            icon.className = 'bi bi-sun-fill';
-            text.innerText = 'Light Mode';
+        if (icon && text) {
+            icon.className = isDark ? 'bi bi-moon-stars-fill' : 'bi bi-sun-fill';
+            text.innerText = isDark ? 'Dark Mode' : 'Light Mode';
         }
     }
 
@@ -389,15 +465,14 @@
         });
 
         const noMatchRow = document.getElementById('noStocksFoundRow');
-        noMatchRow.style.display = anyMatchFound ? 'none' : '';
+        if (noMatchRow) noMatchRow.style.display = anyMatchFound ? 'none' : '';
     }
 
-    // Helper to detect current dark theme status for SweetAlert text styling
     function getSwalClass() {
         return document.documentElement.getAttribute('data-bs-theme') === 'dark' ? 'text-white' : 'text-dark';
     }
 
-    // ─── 1. ADD FUNDS SWEETALERT POPUP ───
+    // ─── 1. ADD FUNDS SWEALALERT POPUP ───
     function openAddFundsModal(e) {
         e.preventDefault();
         Swal.fire({
@@ -506,52 +581,114 @@
             cancelButtonText: 'Cancel'
         }).then((result) => {
             if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'Processing Sell Order...',
-                    allowOutsideClick: false,
-                    didOpen: () => { Swal.showLoading(); }
-                });
+                Swal.fire({ title: 'Processing Sell Order...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); } });
                 currentForm.submit();
             }
         });
         return false;
     }
 
-    // ─── 4. DYNAMIC CHART INTEGRATION ───
-    fetch('/stocks/api/user-chart/')
-        .then(response => response.json())
-        .then(data => {
-            if (!data.labels || data.labels.length === 0) {
-                document.getElementById('userExpenseChart').parentElement.innerHTML = `<p class="text-muted py-5">No allocation metrics available</p>`;
-                return;
-            }
-            const ctx = document.getElementById('userExpenseChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: data.labels,
-                    datasets: [{
-                        data: data.data,
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#2ECC71']
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    plugins: { 
-                        legend: { 
-                            position: 'bottom',
-                            labels: {
-                                color: document.documentElement.getAttribute('data-bs-theme') === 'dark' ? '#94a3b8' : '#6c757d'
-                            }
-                        } 
-                    } 
+    // ─── 4. COMPLETE: DYNAMIC STOCK DETAIL MODAL ENGINE ───
+    function viewStockDetails(stockId, ticker, name, currentPrice, pnl) {
+        document.getElementById('modalStockTicker').innerText = ticker;
+        document.getElementById('modalStockName').innerText = name;
+        
+        const parsedPrice = parseFloat(currentPrice);
+        document.getElementById('modalStockPrice').innerText = '₹' + parsedPrice.toFixed(2);
+        
+        const pnlBadge = document.getElementById('modalStockPnL');
+        const parsedPnL = parseFloat(pnl);
+        
+        if (parsedPnL > 0) {
+            pnlBadge.innerText = '▲ ₹' + parsedPnL.toFixed(2);
+            pnlBadge.className = 'fw-bold m-0 mt-1 text-success';
+        } else if (parsedPnL < 0) {
+            pnlBadge.innerText = '▼ ₹' + Math.abs(parsedPnL).toFixed(2);
+            pnlBadge.className = 'fw-bold m-0 mt-1 text-danger';
+        } else {
+            pnlBadge.innerText = 'Flat';
+            pnlBadge.className = 'fw-bold m-0 mt-1 text-muted';
+        }
+
+        // Dummy/Mock Fundamentals Allocation
+        document.getElementById('detail52High').innerText = '₹' + (parsedPrice * 1.25).toFixed(2);
+        document.getElementById('detail52Low').innerText = '₹' + (parsedPrice * 0.85).toFixed(2);
+        document.getElementById('detailMarketCap').innerText = (Math.random() * 500 + 100).toFixed(2) + ' Cr';
+        document.getElementById('detailPERatio').innerText = (Math.random() * 30 + 10).toFixed(2);
+
+        // Render Performance Chart inside Modal
+        const ctx = document.getElementById('stockTrendChart').getContext('2d');
+        if (stockDetailChartInstance) {
+            stockDetailChartInstance.destroy();
+        }
+
+        // Generate dummy timeline trend dates & values
+        const chartLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Today'];
+        const chartData = [
+            parsedPrice * 0.95, 
+            parsedPrice * 0.98, 
+            parsedPrice * 0.93, 
+            parsedPrice * 1.02, 
+            parsedPrice * 0.99, 
+            parsedPrice
+        ];
+
+        stockDetailChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: chartLabels,
+                datasets: [{
+                    label: ticker + ' Price (₹)',
+                    data: chartData,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { grid: { color: 'rgba(0,0,0,0.05)' } }
                 }
-            });
-        })
-        .catch(err => {
-            console.error("Chart loading failed:", err);
-            document.getElementById('userExpenseChart').parentElement.innerHTML = `<p class="text-muted py-5">Failed to load chart visualization</p>`;
+            }
         });
+
+        // Initialize and Open the Bootstrap Modal
+        const myModal = new bootstrap.Modal(document.getElementById('stockDetailModal'));
+        myModal.show();
+    }
+
+    // ─── 5. MOCK EXPENSE INITIALIZER CHART ───
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('userExpenseChart').getContext('2d');
+        const isDark = document.documentElement.getAttribute('data-bs-theme') === 'dark';
+        
+        expenseChartInstance = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Wallet Balance', 'Stock Investments'],
+                datasets: [{
+                    data: [parseFloat('{{ wallet.balance|default:0 }}') || 5000, 12500],
+                    backgroundColor: ['#10b981', '#3b82f6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: isDark ? '#94a3b8' : '#6c757d', font: { size: 12 } }
+                    }
+                }
+            }
+        });
+    });
 </script>
 </body>
 </html>
